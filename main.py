@@ -45,7 +45,7 @@ with tabs[0]:
 
     # Attendance form
     name = st.selectbox("Select Student Name", names)
-    date = st.date_input("Select Date", value=datetime.today(), format="DD/MM/YY")
+    date = st.date_input("Select Date", value=datetime.today(), format="DD/MM/YYYY")
     status = st.radio("Attendance Status", ["Present", "Absent"])
 
     if st.button("Submit Attendance"):
