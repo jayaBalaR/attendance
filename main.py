@@ -63,7 +63,7 @@ with tabs[0]:
             })
 
             # Save updated data
-            with open("attendance.json", "w") as f:
+            with open("attendance.json", "w+") as f:
                 json.dump(attendance_data, f, indent=4)
 
             st.success("Attendance recorded successfully!")
