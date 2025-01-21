@@ -1,35 +1,32 @@
 import streamlit as st
-import sqlite3
+import json
 import pandas as pd
 from datetime import datetime
 
-# Database setup
-def init_db():
-    # Create the SQL connection to pets_db as specified in your secrets file.
-    conn = sqlite3.connect("attendance.db")
-    cursor = conn.cursor()
-    # Attendance table
-    cursor.execute('''CREATE TABLE IF NOT EXISTS attendance (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT,
-                        status TEXT,
-                        date TEXT)''')
-    # Fees table
-    cursor.execute('''CREATE TABLE IF NOT EXISTS fees (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT,
-                        fees_to_pay REAL)''')
-    conn.commit()
-    conn.close()
+# Initialize JSON files
+def init_json():
+    try:
+        with open("attendance.json", "r") as f:
+            json.load(f)
+    except FileNotFoundError:
+        with open("attendance.json", "w") as f:
+            json.dump([], f)
+
+    try:
+        with open("fees.json", "r") as f:
+            json.load(f)
+    except FileNotFoundError:
+        with open("fees.json", "w") as f:
+            json.dump([], f)
 
 # Function to populate names from an Excel file
 def load_names_from_excel():
     # Assume the Excel file is named 'students.xlsx' with a 'name' column
     df = pd.read_excel('students.xlsx')
-    return df['Name'].tolist()
+    return df['name'].tolist()
 
-# Initialize database
-init_db()
+# Initialize JSON files
+init_json()
 
 # Load names from Excel
 names = load_names_from_excel()
@@ -46,15 +43,25 @@ with tabs[0]:
 
     # Attendance form
     name = st.selectbox("Select Student Name", names)
-    date = st.date_input("Select Date", value=datetime.today(), format="DD/MM/YYYY")
+    date = st.date_input("Select Date", value=datetime.today(), format="DD/MM/YY")
     status = st.radio("Attendance Status", ["Present", "Absent"])
 
     if st.button("Submit Attendance"):
-        conn = sqlite3.connect("attendance.db")
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO attendance (name, status, date) VALUES (?, ?, ?)", (name, status, date.strftime('%d/%m/%Y')))
-        conn.commit()
-        conn.close()
+        # Load existing attendance data
+        with open("attendance.json", "r") as f:
+            attendance_data = json.load(f)
+
+        # Append new record
+        attendance_data.append({
+            "name": name,
+            "status": status,
+            "date": date.strftime('%d/%m/%Y')
+        })
+
+        # Save updated data
+        with open("attendance.json", "w") as f:
+            json.dump(attendance_data, f, indent=4)
+
         st.success("Attendance recorded successfully!")
 
 # Tab 2: Calculate Fees
@@ -74,26 +81,27 @@ with tabs[1]:
         })
 
         if st.button("Calculate Fees"):
-            conn = sqlite3.connect("attendance.db")
-            cursor = conn.cursor()
+            # Load attendance data
+            with open("attendance.json", "r") as f:
+                attendance_data = json.load(f)
+
             fees_results = []
 
             for _, row in df.iterrows():
-                cursor.execute("SELECT COUNT(*) FROM attendance WHERE name = ? AND status = 'Present'", (row['Name'],))
-                present_days = cursor.fetchone()[0]
+                # Count present days
+                present_days = sum(1 for record in attendance_data if record['name'] == row['Name'] and record['status'] == 'Present')
                 daily_fees = row['Monthly Fees'] / 30  # Assuming 30 days in a month
                 fees_to_pay = daily_fees * present_days
 
-                # Save calculated fees to the database
-                cursor.execute("INSERT INTO fees (name, fees_to_pay) VALUES (?, ?)", (row['Name'], fees_to_pay))
-
+                # Append calculated fees
                 fees_results.append({
-                    "Name": row['Name'],
-                    "Fees to Pay": round(fees_to_pay, 2)
+                    "name": row['Name'],
+                    "fees_to_pay": round(fees_to_pay, 2)
                 })
 
-            conn.commit()
-            conn.close()
+            # Save fees data to JSON
+            with open("fees.json", "w") as f:
+                json.dump(fees_results, f, indent=4)
 
             # Display calculated fees
             fees_df = pd.DataFrame(fees_results)
