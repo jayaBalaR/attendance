@@ -6,7 +6,7 @@ from datetime import datetime
 # Database setup
 def init_db():
     # Create the SQL connection to pets_db as specified in your secrets file.
-    conn = sqlite3.connect("attendance.db", "sql")
+    conn = sqlite3.connect("attendance.db")
     cursor = conn.cursor()
     # Attendance table
     cursor.execute('''CREATE TABLE IF NOT EXISTS attendance (
