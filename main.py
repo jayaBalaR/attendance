@@ -23,7 +23,7 @@ def init_json():
 def load_names_from_excel():
     # Assume the Excel file is named 'students.xlsx' with a 'name' column
     df = pd.read_excel('students.xlsx')
-    return df['name'].tolist()
+    return df['Name'].tolist()
 
 # Initialize JSON files
 init_json()
