@@ -44,25 +44,29 @@ with tabs[0]:
     # Attendance form
     name = st.selectbox("Select Student Name", names)
     date = st.date_input("Select Date", value=datetime.today(), format="DD/MM/YYYY")
-    status = st.radio("Attendance Status", ["Present", "Absent"])
+    # Ensure attendance is only for today or future dates
+    if date < datetime.today().date():
+        st.error("You can only submit attendance for today or future dates.")
+    else:
+        status = st.radio("Attendance Status", ["Present", "Absent"])
 
-    if st.button("Submit Attendance"):
-        # Load existing attendance data
-        with open("attendance.json", "r") as f:
-            attendance_data = json.load(f)
+        if st.button("Submit Attendance"):
+            # Load existing attendance data
+            with open("attendance.json", "r") as f:
+                attendance_data = json.load(f)
 
-        # Append new record
-        attendance_data.append({
-            "name": name,
-            "status": status,
-            "date": date.strftime('%d/%m/%Y')
-        })
+            # Append new record
+            attendance_data.append({
+                "name": name,
+                "status": status,
+                "date": date.strftime('%d/%m/%Y')
+            })
 
-        # Save updated data
-        with open("attendance.json", "w") as f:
-            json.dump(attendance_data, f, indent=4)
+            # Save updated data
+            with open("attendance.json", "w") as f:
+                json.dump(attendance_data, f, indent=4)
 
-        st.success("Attendance recorded successfully!")
+            st.success("Attendance recorded successfully!")
 
 # Tab 2: Calculate Fees
 with tabs[1]:
