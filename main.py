@@ -2,87 +2,17 @@ import streamlit as st
 import json
 import pandas as pd
 from datetime import datetime
-import pymongo
 
-@st.cache_resource
-def init_connection():
-    return pymongo.MongoClient(**st.secrets["mongo"])
-
-client = init_connection()
-
-# Pull data from the collection.
-# Uses st.cache_data to only rerun when the query changes or after 10 min.
-@st.cache_data(ttl=600)
-def get_data():
-    db = client.mydb
-    items = db.mycollection.find()
-    items = list(items)  # make hashable for st.cache_data
-    return items
-
-items = get_data()
-
-# Print results.
-for item in items:
-    st.write(f"{item['name']} has a :{item['status']}:")
-
-# Initialize JSON files
-def init_json():
-
-    try:
-        with open("fees.json", "r") as f:
-            json.load(f)
-    except FileNotFoundError:
-        with open("fees.json", "w") as f:
-            json.dump([], f)
-
-# Function to populate names from an Excel file
-def load_names_from_excel():
-    # Assume the Excel file is named 'students.xlsx' with a 'name' column
-    df = pd.read_excel('students.xlsx')
-    return df['Name'].tolist()
-
-# Initialize JSON files
-init_json()
-
-# Load names from Excel
-names = load_names_from_excel()
 
 # Streamlit App
 st.title("Student Attendance and Fees Tracker")
 
 # Tab selection
-tabs = st.tabs(["Mark Attendance", "Calculate Fees (End of Month)"])
+tabs = st.tabs(["Calculate Fees (End of Month)"])
 
 # Tab 1: Mark Attendance
 with tabs[0]:
-    st.header("Mark Attendance")
 
-    # Attendance form
-    name = st.selectbox("Select Student Name", names)
-    date = st.date_input("Select Date", value=datetime.today(), format="DD/MM/YYYY")
-    # Ensure attendance is only for today or future dates
-    if date < datetime.today().date():
-        st.error("You can only submit attendance for today or future dates.")
-    else:
-        status = st.radio("Attendance Status", ["Present", "Absent"])
-
-        if st.button("Submit Attendance"):
-            # Load existing attendance data
-            with open("attendance.json", "r") as f:
-                attendance_data = json.load(f)
-
-            # Append new record
-            attendance_data.append({
-                "name": name,
-                "status": status,
-                "date": date.strftime('%d/%m/%Y')
-            })
-
-            # Save updated data
-            with open("attendance.json", "w+") as f:
-                json.dump(attendance_data, f, indent=4)
-
-            st.success("Attendance recorded successfully!")
 
 # Tab 2: Calculate Fees
 with tabs[1]:
