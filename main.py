@@ -77,7 +77,7 @@ with tabs[1]:
             for _, row in df.iterrows():
                 # Count present days from MongoDB
                 present_days = attendance_collection.count_documents({"name": row['Name'], "status": "Present"})
-                daily_fees = row['Monthly Fees'] / 30  # Assuming 30 days in a month
+                daily_fees = row['Monthly Fees'] / 12  # Assuming 3 classes each week, 4 weeks in a month
                 fees_to_pay = daily_fees * present_days
 
                 # Append calculated fees
