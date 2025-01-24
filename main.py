@@ -6,7 +6,7 @@ from datetime import datetime
 # MongoDB Atlas connection setup
 def init_mongodb():
     #client = pymongo.MongoClient(**st.secrets["url"])
-    client = pymongo.MongoClient(**st.secrets["mongo"], connect=False)
+    client = pymongo.MongoClient(**st.secrets["mongo"], connect=False, serverSelectionTimeoutMS=5000)
     db = client["attendance_db"]
     return db
 
