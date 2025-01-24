@@ -7,7 +7,7 @@ from datetime import datetime
 def init_mongodb():
     #client = pymongo.MongoClient(**st.secrets["url"])
     client = pymongo.MongoClient(**st.secrets["mongo"])
-    #db = client["attendance_db"]
+    db = client["attendance_db"]
     return db
 
 # Function to populate names from an Excel file
