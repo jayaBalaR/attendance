@@ -39,21 +39,21 @@ with tabs[0]:
     date = st.date_input("Select Date", value=datetime.today(), format="DD/MM/YYYY")
 
     # Ensure attendance is only for today or future dates
-    # if date < datetime.today().date():
-    #     st.error("You can only submit attendance for today or future dates.")
-    # else:
-    status = st.radio("Attendance Status", ["Present", "Absent"])
-
-    if st.button("Submit Attendance"):
-        # Insert new record into MongoDB
-        attendance_record = {
-            "name": name,
-            "status": status,
-            "date": date.strftime('%d/%m/%Y')
-        }
-        attendance_collection.insert_one(attendance_record)
-
-        st.success("Attendance recorded successfully!")
+    if date < datetime.today().date():
+        st.error("You can only submit attendance for today or future dates.")
+    else:
+        status = st.radio("Attendance Status", ["Present", "Absent"])
+    
+        if st.button("Submit Attendance"):
+            # Insert new record into MongoDB
+            attendance_record = {
+                "name": name,
+                "status": status,
+                "date": date.strftime('%d/%m/%Y')
+            }
+            attendance_collection.insert_one(attendance_record)
+    
+            st.success("Attendance recorded successfully!")
 
 # Tab 2: Calculate Fees
 with tabs[1]:
