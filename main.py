@@ -3,14 +3,29 @@ import json
 import pandas as pd
 from datetime import datetime
 
+@st.cache_resource
+def init_connection():
+    return pymongo.MongoClient(**st.secrets["mongo"])
+
+client = init_connection()
+
+# Pull data from the collection.
+# Uses st.cache_data to only rerun when the query changes or after 10 min.
+@st.cache_data(ttl=600)
+def get_data():
+    db = client.mydb
+    items = db.mycollection.find()
+    items = list(items)  # make hashable for st.cache_data
+    return items
+
+items = get_data()
+
+# Print results.
+for item in items:
+    st.write(f"{item['name']} has a :{item['status']}:")
+
 # Initialize JSON files
 def init_json():
-    try:
-        with open("attendance.json", "r") as f:
-            json.load(f)
-    except FileNotFoundError:
-        with open("attendance.json", "w") as f:
-            json.dump([], f)
 
     try:
         with open("fees.json", "r") as f:
