@@ -5,7 +5,8 @@ from datetime import datetime
 
 # MongoDB Atlas connection setup
 def init_mongodb():
-    client = pymongo.MongoClient("your_mongodb_connection_string")  # Replace with your MongoDB Atlas connection string
+    client = pymongo.MongoClient(**st.secrets["your_mongodb_connection_string"])
+    #client = pymongo.MongoClient("your_mongodb_connection_string")  # Replace with your MongoDB Atlas connection string
     db = client["attendance_db"]
     return db
 
