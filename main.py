@@ -1,39 +1,58 @@
 import streamlit as st
-import json
+import pymongo
 import pandas as pd
 from datetime import datetime
-import pymongo
 
+# MongoDB Atlas connection setup
+def init_mongodb():
+    client = pymongo.MongoClient("your_mongodb_connection_string")  # Replace with your MongoDB Atlas connection string
+    db = client["attendance_db"]
+    return db
+
+# Function to populate names from an Excel file
+def load_names_from_excel():
+    # Assume the Excel file is named 'students.xlsx' with a 'name' column
+    df = pd.read_excel('students.xlsx')
+    return df['name'].tolist()
+
+# Initialize MongoDB connection
+db = init_mongodb()
+attendance_collection = db["attendance"]
+fees_collection = db["fees"]
+
+# Load names from Excel
+names = load_names_from_excel()
 
 # Streamlit App
 st.title("Student Attendance and Fees Tracker")
 
 # Tab selection
-tabs = st.tabs(["Calculate Fees (End of Month)"])
+tabs = st.tabs(["Mark Attendance", "Calculate Fees (End of Month)"])
 
 # Tab 1: Mark Attendance
 with tabs[0]:
-    @st.cache_resource
-    def init_connection():
-        return pymongo.MongoClient(**st.secrets["mongo"])
-    
-    client = init_connection()
-    
-    # Pull data from the collection.
-    # Uses st.cache_data to only rerun when the query changes or after 10 min.
-    @st.cache_data(ttl=600)
-    def get_data():
-        db = client.mydb
-        items = db.mycollection.find()
-        items = list(items)  # make hashable for st.cache_data
-        return items
-    
-    items = get_data()
-    
-    # Print results.
-    for item in items:
-        st.write(f"{item['name']} has a :{item['status']}:")
+    st.header("Mark Attendance")
 
+    # Attendance form
+    name = st.selectbox("Select Student Name", names)
+    date = st.date_input("Select Date", value=datetime.today(), format="DD/MM/YY")
+
+    # Ensure attendance is only for today or future dates
+    if date < datetime.today().date():
+        st.error("You can only submit attendance for today or future dates.")
+    else:
+        status = st.radio("Attendance Status", ["Present", "Absent"])
+
+        if st.button("Submit Attendance"):
+            # Insert new record into MongoDB
+            attendance_record = {
+                "name": name,
+                "status": status,
+                "date": date.strftime('%d/%m/%Y')
+            }
+            attendance_collection.insert_one(attendance_record)
+
+            st.success("Attendance recorded successfully!")
 
 # Tab 2: Calculate Fees
 with tabs[1]:
@@ -52,15 +71,11 @@ with tabs[1]:
         })
 
         if st.button("Calculate Fees"):
-            # Load attendance data
-            with open("attendance.json", "r") as f:
-                attendance_data = json.load(f)
-
             fees_results = []
 
             for _, row in df.iterrows():
-                # Count present days
-                present_days = sum(1 for record in attendance_data if record['name'] == row['Name'] and record['status'] == 'Present')
+                # Count present days from MongoDB
+                present_days = attendance_collection.count_documents({"name": row['Name'], "status": "Present"})
                 daily_fees = row['Monthly Fees'] / 30  # Assuming 30 days in a month
                 fees_to_pay = daily_fees * present_days
 
@@ -70,9 +85,12 @@ with tabs[1]:
                     "fees_to_pay": round(fees_to_pay, 2)
                 })
 
-            # Save fees data to JSON
-            with open("fees.json", "w") as f:
-                json.dump(fees_results, f, indent=4)
+                # Insert or update fees record in MongoDB
+                fees_collection.update_one(
+                    {"name": row['Name']},
+                    {"$set": {"fees_to_pay": round(fees_to_pay, 2)}},
+                    upsert=True
+                )
 
             # Display calculated fees
             fees_df = pd.DataFrame(fees_results)
