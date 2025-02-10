@@ -61,41 +61,41 @@ with tabs[1]:
 
     # Enable tab only at the end of the month
     today = datetime.today()
-    # if today.day != 30 and today.day != 31:  # Example condition for end-of-month
-    #     st.warning("This feature is only enabled at the end of the month.")
-    # else:
+    if today.day != 30 and today.day != 31:  # Example condition for end-of-month
+        st.warning("This feature is only enabled at the end of the month.")
+    else:
     # Display table for fee calculation
-    df = pd.DataFrame({
-        "Name": names,
-        "Email": [f"{name.lower().replace(' ', '.')}@example.com" for name in names],
-        "Monthly Fees": [st.number_input(f"Monthly Fees for {name}", min_value=0.0) for name in names]
-    })
-
-    if st.button("Calculate Fees"):
-        fees_results = []
-
-        for _, row in df.iterrows():
-            # Count present days from MongoDB
-            present_days = attendance_collection.count_documents({"name": row['Name'], "status": "Present"})
-            daily_fees = row['Monthly Fees'] / 12  # Assuming 3 classes each week, 4 weeks in a month
-            fees_to_pay = daily_fees * present_days
-
-            # Append calculated fees
-            fees_results.append({
-                "name": row['Name'],
-                "fees_to_pay": round(fees_to_pay, 2)
-            })
-
-            # Insert or update fees record in MongoDB
-            fees_collection.update_one(
-                {"name": row['Name']},
-                {"$set": {"fees_to_pay": round(fees_to_pay, 2)}},
-                upsert=True
-            )
-
-        # Display calculated fees
-        fees_df = pd.DataFrame(fees_results)
-        st.write("Calculated Fees")
-        st.dataframe(fees_df)
+        df = pd.DataFrame({
+            "Name": names,
+            "Email": [f"{name.lower().replace(' ', '.')}@example.com" for name in names],
+            "Monthly Fees": [st.number_input(f"Monthly Fees for {name}", min_value=0.0) for name in names]
+        })
+    
+        if st.button("Calculate Fees"):
+            fees_results = []
+    
+            for _, row in df.iterrows():
+                # Count present days from MongoDB
+                present_days = attendance_collection.count_documents({"name": row['Name'], "status": "Present"})
+                daily_fees = row['Monthly Fees'] / 12  # Assuming 3 classes each week, 4 weeks in a month
+                fees_to_pay = daily_fees * present_days
+    
+                # Append calculated fees
+                fees_results.append({
+                    "name": row['Name'],
+                    "fees_to_pay": round(fees_to_pay, 2)
+                })
+    
+                # Insert or update fees record in MongoDB
+                fees_collection.update_one(
+                    {"name": row['Name']},
+                    {"$set": {"fees_to_pay": round(fees_to_pay, 2)}},
+                    upsert=True
+                )
+    
+            # Display calculated fees
+            fees_df = pd.DataFrame(fees_results)
+            st.write("Calculated Fees")
+            st.dataframe(fees_df)
 
 st.sidebar.info("Developed for tracking student attendance and fees.")
